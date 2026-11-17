@@ -1,0 +1,298 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Balap Mobil</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #151515;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    color: #ffcc00;
+    margin: 15px;
+}
+
+.game {
+    width: 340px;
+    height: 540px;
+    margin: auto;
+    background: #444;
+    position: relative;
+    overflow: hidden;
+    border: 5px solid white;
+    border-radius: 12px;
+}
+
+.road {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #383838;
+}
+
+.line {
+    position: absolute;
+    width: 8px;
+    height: 70px;
+    background: white;
+    left: 166px;
+}
+
+.car {
+    width: 42px;
+    height: 75px;
+    position: absolute;
+    border-radius: 9px;
+    z-index: 2;
+}
+
+.player {
+    background: #00ccff;
+    bottom: 20px;
+    left: 149px;
+    border: 3px solid white;
+}
+
+.enemy {
+    background: #ff3030;
+    top: -90px;
+    border: 3px solid white;
+}
+
+.car::before {
+    content: "";
+    position: absolute;
+    background: #aeeaff;
+    width: 24px;
+    height: 18px;
+    top: 9px;
+    left: 6px;
+    border-radius: 5px;
+}
+
+.car::after {
+    content: "";
+    position: absolute;
+    background: #222;
+    width: 26px;
+    height: 10px;
+    bottom: 7px;
+    left: 5px;
+    border-radius: 3px;
+}
+
+.score {
+    font-size: 20px;
+    margin: 10px;
+    color: #ffcc00;
+}
+
+button {
+    padding: 12px 25px;
+    margin: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #ffcc00;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.controls button {
+    width: 90px;
+    background: #00aaff;
+    color: white;
+}
+
+#message {
+    position: absolute;
+    top: 40%;
+    width: 100%;
+    z-index: 5;
+    background: #222e;
+    padding: 20px;
+    font-size: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏎️ BALAP MOBIL</h1>
+
+<div class="score">
+    Skor: <span id="score">0</span>
+</div>
+
+<div class="game" id="game">
+    <div class="road"></div>
+
+    <div class="line" style="top: 0px"></div>
+    <div class="line" style="top: 140px"></div>
+    <div class="line" style="top: 280px"></div>
+    <div class="line" style="top: 420px"></div>
+
+    <div class="car player" id="player"></div>
+
+    <div id="message">
+        🏁 SIAP BALAP!
+        <br>
+        <button onclick="startGame()">MULAI</button>
+    </div>
+</div>
+
+<div class="controls">
+    <button onpointerdown="move(-1)">⬅ KIRI</button>
+    <button onpointerdown="move(1)">KANAN ➡</button>
+</div>
+
+<button onclick="startGame()">ULANGI GAME</button>
+
+<p>Gunakan tombol ← → atau A dan D untuk bergerak.</p>
+
+<script>
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const scoreText = document.getElementById("score");
+const message = document.getElementById("message");
+
+let playerX = 149;
+let enemies = [];
+let lines = document.querySelectorAll(".line");
+let score = 0;
+let speed = 4;
+let playing = false;
+let animation;
+
+function move(direction) {
+    if (!playing) return;
+
+    playerX += direction * 30;
+
+    if (playerX < 10) playerX = 10;
+    if (playerX > 288) playerX = 288;
+
+    player.style.left = playerX + "px";
+}
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+        move(-1);
+    }
+
+    if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+        move(1);
+    }
+});
+
+function createEnemy() {
+    const enemy = document.createElement("div");
+    enemy.className = "car enemy";
+
+    let lane = Math.floor(Math.random() * 3);
+    enemy.style.left = (65 + lane * 90) + "px";
+    enemy.style.top = "-90px";
+
+    game.appendChild(enemy);
+    enemies.push(enemy);
+}
+
+function startGame() {
+    cancelAnimationFrame(animation);
+
+    enemies.forEach(e => e.remove());
+    enemies = [];
+
+    playerX = 149;
+    player.style.left = playerX + "px";
+
+    score = 0;
+    speed = 4;
+    scoreText.textContent = score;
+
+    playing = true;
+    message.style.display = "none";
+
+    gameLoop();
+}
+
+function gameOver() {
+    playing = false;
+    cancelAnimationFrame(animation);
+
+    message.innerHTML =
+        "💥 GAME OVER!" +
+        "<br>Skor kamu: " + score +
+        "<br><button onclick='startGame()'>MAIN LAGI</button>";
+
+    message.style.display = "block";
+}
+
+let frame = 0;
+
+function gameLoop() {
+    if (!playing) return;
+
+    frame++;
+
+    lines.forEach(line => {
+        let y = parseInt(line.style.top);
+        y += speed;
+
+        if (y > 540) y = -70;
+
+        line.style.top = y + "px";
+    });
+
+    if (frame % 65 === 0) {
+        createEnemy();
+    }
+
+    enemies.forEach((enemy, index) => {
+        let y = parseInt(enemy.style.top);
+        y += speed;
+
+        enemy.style.top = y + "px";
+
+        let enemyX = parseInt(enemy.style.left);
+
+        if (
+            y + 65 > 445 &&
+            y < 520 &&
+            playerX < enemyX + 42 &&
+            playerX + 42 > enemyX
+        ) {
+            gameOver();
+        }
+
+        if (y > 550) {
+            enemy.remove();
+            enemies.splice(index, 1);
+
+            score++;
+            scoreText.textContent = score;
+
+            if (score % 5 === 0) {
+                speed += 0.5;
+            }
+        }
+    });
+
+    animation = requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>
